@@ -48,5 +48,9 @@ yolo26-main/
 detection_result.png
 detection_test.png
 
+# Backend runtime data (uploads & results)
+backend/uploads/
+backend/results/
+
 # Text files
 text/
