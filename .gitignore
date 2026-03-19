@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Model weights (too large for git)
+*.pt
+*.pth
+*.onnx
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Data & videos
+test_video/
+SinD/
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+nul
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+xal_log.txt
+
+# Temp
+*.tmp
+
+# Claude Code config
+.claude/
+.mcp.json
+
+# YOLO framework (too large, install separately)
+yolo26-main/
+
+# PDF docs
+*.pdf
+
+# Detection test outputs
+detection_result.png
+detection_test.png
+
+# Text files
+text/

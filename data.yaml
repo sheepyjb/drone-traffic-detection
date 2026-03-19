@@ -1,0 +1,13 @@
+path: /root/autodl-tmp/dataset
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 6
+names:
+  0: crack
+  1: spalling
+  2: rebar_exposure
+  3: corrosion
+  4: efflorescence
+  5: water_seepage

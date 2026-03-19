@@ -1,0 +1,96 @@
+// ========================================
+// 浅色工业风变量
+// ========================================
+
+// 背景 — 浅色
+$bg-primary: #f0f2f7;       // 主背景 浅蓝灰
+$bg-secondary: #ffffff;     // 头部/侧栏
+$bg-card: #ffffff;          // 面板白色
+$bg-card-alt: #f6f8fb;      // 面板交替
+$bg-warm: #fff8f0;          // 暖警告背景
+$bg-input: #f0f2f7;         // 输入凹槽
+
+// 工业色板（加深适配浅底）
+$ind-amber: #d97706;        // 琥珀/警示
+$ind-cyan: #0891b2;         // 青色/信息
+$ind-orange: #ea580c;       // 橙色/告警
+$ind-green: #16a34a;        // 绿色/正常
+$ind-red: #dc2626;          // 红色/危险
+$ind-blue: #2563eb;         // 蓝色/系统
+$ind-steel: #64748b;        // 钢灰
+$ind-slate: #475569;        // 铅灰
+
+// 功能色
+$accent-primary: $ind-cyan;
+$accent-success: $ind-green;
+$accent-danger: $ind-red;
+$accent-warning: $ind-amber;
+$accent-info: $ind-blue;
+
+// 文本 — 深色高对比
+$text-primary: #1e293b;
+$text-secondary: #475569;
+$text-muted: #94a3b8;
+$text-light: #cbd5e1;
+$text-on-color: #ffffff;
+
+// 边框
+$border-color: rgba(0, 0, 0, 0.1);
+$border-light: rgba(0, 0, 0, 0.06);
+$border-glow: rgba(8, 145, 178, 0.3);
+
+// 尺寸
+$header-height: 60px;
+$sidebar-width: 210px;
+$sidebar-collapsed-width: 66px;
+
+// 圆角
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 14px;
+$radius-pill: 999px;
+
+// 字体
+$font-family: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+$font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+$font-display: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+// ===== 阴影系统 =====
+$shadow-panel:
+  0 1px 3px rgba(0, 0, 0, 0.06),
+  0 1px 2px rgba(0, 0, 0, 0.04);
+
+$shadow-panel-hover:
+  0 4px 12px rgba(0, 0, 0, 0.08),
+  0 0 0 1px rgba(8, 145, 178, 0.15);
+
+$shadow-pressed:
+  inset 0 1px 3px rgba(0, 0, 0, 0.1);
+
+$shadow-groove:
+  inset 0 1px 3px rgba(0, 0, 0, 0.06),
+  inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+// 兼容旧变量名
+$shadow-clay: $shadow-panel;
+$shadow-clay-hover: $shadow-panel-hover;
+$shadow-clay-pressed: $shadow-pressed;
+$clay-inset: none;
+$inner-highlight: none;
+$inner-shadow: $shadow-pressed;
+
+$clay-purple: $ind-cyan;
+$clay-blue: $ind-blue;
+$clay-pink: $ind-red;
+$clay-mint: $ind-green;
+$clay-orange: $ind-amber;
+$clay-yellow: $ind-amber;
+$clay-red: $ind-red;
+$clay-teal: $ind-cyan;
+
+// 过渡
+$transition-fast: 0.15s ease-out;
+$transition-normal: 0.2s ease-out;
+$transition-slow: 0.3s ease-out;
+$transition-smooth: 0.2s ease-out;

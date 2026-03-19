@@ -1,0 +1,6 @@
+crack
+spalling
+rebar_exposure
+corrosion
+efflorescence
+water_seepage

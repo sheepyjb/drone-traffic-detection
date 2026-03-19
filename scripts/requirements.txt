@@ -1,0 +1,5 @@
+# SAM2 bbox->seg conversion dependencies
+opencv-python>=4.8.0
+numpy>=1.24.0
+onnxruntime-gpu>=1.16.0
+tqdm>=4.65.0
