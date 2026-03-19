@@ -1,30 +1,37 @@
 """
 消融实验 配置一: YOLO26-S 标准检测头 (P3/P4/P5)
 RGB 单模态 Baseline
+
+用法:
+  python train_ablation1_baseline.py           # 从头训练
+  python train_ablation1_baseline.py --resume   # 断点续训
 """
 
 import sys
+import argparse
 sys.path.insert(0, "/root/autodl-tmp/yolo26-main/ultralytics-main")
 
 from ultralytics import YOLO
 
+RUN_DIR = "/root/autodl-tmp/runs/detect/ablation1_yolo26s_baseline"
 
-def train():
-    # 标准 YOLO26-S, 3层检测头 P3/P4/P5
+
+def train(resume=False):
+    if resume:
+        model = YOLO(f"{RUN_DIR}/weights/last.pt")
+        model.train(resume=True)
+        return
+
     model = YOLO("yolo26s.yaml")
     model.load("/root/autodl-tmp/yolo26-main/yolo26s.pt")
 
     model.train(
         data="/root/autodl-tmp/dataset/data.yaml",
-
-        # 基础
         epochs=200,
         patience=50,
-        batch=16,              # S 模型显存小, 可用 16
-        imgsz=640,             # 标准尺寸作 baseline
+        batch=16,
+        imgsz=640,
         device=0,
-
-        # 优化器
         lr0=0.01,
         lrf=0.01,
         momentum=0.937,
@@ -33,8 +40,6 @@ def train():
         warmup_momentum=0.8,
         warmup_bias_lr=0.1,
         cos_lr=True,
-
-        # 数据增强
         mosaic=1.0,
         close_mosaic=15,
         mixup=0.1,
@@ -50,8 +55,6 @@ def train():
         erasing=0.1,
         label_smoothing=0.05,
         multi_scale=True,
-
-        # 输出
         project="/root/autodl-tmp/runs/detect",
         name="ablation1_yolo26s_baseline",
         exist_ok=True,
@@ -64,4 +67,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--resume", action="store_true", help="从上次中断处继续训练")
+    args = parser.parse_args()
+    train(resume=args.resume)

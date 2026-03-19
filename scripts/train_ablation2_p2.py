@@ -1,30 +1,37 @@
 """
 消融实验 配置二: YOLO26-S + P2 小目标检测头 (P2/P3/P4/P5)
 RGB 单模态, 增加 stride=4 的高分辨率检测层
+
+用法:
+  python train_ablation2_p2.py           # 从头训练
+  python train_ablation2_p2.py --resume   # 断点续训
 """
 
 import sys
+import argparse
 sys.path.insert(0, "/root/autodl-tmp/yolo26-main/ultralytics-main")
 
 from ultralytics import YOLO
 
+RUN_DIR = "/root/autodl-tmp/runs/detect/ablation2_yolo26s_p2"
 
-def train():
-    # P2 检测头: 4 层输出, stride=4 捕获极小目标
+
+def train(resume=False):
+    if resume:
+        model = YOLO(f"{RUN_DIR}/weights/last.pt")
+        model.train(resume=True)
+        return
+
     model = YOLO("yolo26s-p2.yaml")
     model.load("/root/autodl-tmp/yolo26-main/yolo26s.pt")
 
     model.train(
         data="/root/autodl-tmp/dataset/data.yaml",
-
-        # 基础
         epochs=200,
         patience=50,
-        batch=12,              # P2 多一层特征图, 显存稍大, 用 12
-        imgsz=864,             # 更大输入, 接近原图 840x712, 配合 P2 发挥
+        batch=12,
+        imgsz=864,
         device=0,
-
-        # 优化器
         lr0=0.01,
         lrf=0.01,
         momentum=0.937,
@@ -33,8 +40,6 @@ def train():
         warmup_momentum=0.8,
         warmup_bias_lr=0.1,
         cos_lr=True,
-
-        # 数据增强
         mosaic=1.0,
         close_mosaic=15,
         mixup=0.1,
@@ -50,8 +55,6 @@ def train():
         erasing=0.1,
         label_smoothing=0.05,
         multi_scale=True,
-
-        # 输出
         project="/root/autodl-tmp/runs/detect",
         name="ablation2_yolo26s_p2",
         exist_ok=True,
@@ -64,4 +67,7 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--resume", action="store_true", help="从上次中断处继续训练")
+    args = parser.parse_args()
+    train(resume=args.resume)
