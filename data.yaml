@@ -1,13 +1,12 @@
 path: /root/autodl-tmp/dataset
 train: train/images
-val: valid/images
+val: val/images
 test: test/images
 
-nc: 6
+nc: 5
 names:
-  0: crack
-  1: spalling
-  2: rebar_exposure
-  3: corrosion
-  4: efflorescence
-  5: water_seepage
+  0: car
+  1: truck
+  2: bus
+  3: van
+  4: freight_car
