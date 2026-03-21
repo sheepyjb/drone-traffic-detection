@@ -51,7 +51,7 @@
               <input type="checkbox" v-model="showHeatmap" /> 热力
             </label>
             <label class="layer-toggle" :class="{ active: showLines }">
-              <input type="checkbox" v-model="showLines" /> 线圈
+              <input type="checkbox" v-model="showLines" @change="flowCountStore.linesEnabled = showLines" /> 线圈
             </label>
           </div>
         </div>
