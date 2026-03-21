@@ -146,7 +146,7 @@ function initPR(experiments: any[]) {
     name: `mAP (${best.map50_95.toFixed(1)}%)`,
     type: 'line' as const,
     smooth: true, showSymbol: false,
-    lineStyle: { width: 2, type: 'dashed' as any },
+    lineStyle: { width: 2, type: 'dashed' } as any,
     itemStyle: { color: '#0891b2' },
     areaStyle: { color: '#0891b2', opacity: 0 },
     data: genPR(best.map50_95),

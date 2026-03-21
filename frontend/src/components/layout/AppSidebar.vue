@@ -39,7 +39,7 @@ const navItems = [
   { path: '/', label: '实时检测', icon: Aim, color: '#06b6d4' },
   { path: '/compare', label: '模型对比', icon: CopyDocument, color: '#3b82f6' },
   { path: '/metrics', label: '评估指标', icon: DataAnalysis, color: '#22c55e' },
-  { path: '/map', label: '地图监控', icon: Location, color: '#f59e0b' },
+  { path: '/map', label: '交通态势', icon: Location, color: '#f59e0b' },
 ]
 </script>
 

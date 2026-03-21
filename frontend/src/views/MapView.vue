@@ -1,14 +1,8 @@
 <template>
   <div class="command-center">
-    <!-- ===== 中央地图（全屏底层） ===== -->
+    <!-- ===== 中央航拍态势图（全屏底层） ===== -->
     <div class="map-layer">
-      <AMapContainer
-        ref="amapRef"
-        :drone-position="[mapStore.droneParams.lng, mapStore.droneParams.lat]"
-        :fov-polygon="fovCorners"
-        :trajectory="demoTrajectory"
-        :vehicle-density="detectionStore.totalObjects"
-      />
+      <AerialView ref="aerialRef" />
     </div>
 
     <!-- ===== 左侧：AR 视频流悬浮窗 ===== -->
@@ -106,12 +100,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { ElNotification } from 'element-plus'
 import { useMapStore } from '@/stores/map'
 import { useDetectionStore } from '@/stores/detection'
 import { useFlowCountStore } from '@/stores/flowCount'
-import AMapContainer from '@/components/map/AMapContainer.vue'
+import AerialView from '@/components/map/AerialView.vue'
 import VideoStreamPanel from '@/components/map/VideoStreamPanel.vue'
 import MetricCards from '@/components/map/MetricCards.vue'
 import FlowBarChart from '@/components/map/FlowBarChart.vue'
@@ -119,37 +113,14 @@ import VehiclePieChart from '@/components/map/VehiclePieChart.vue'
 import TrafficLightPanel from '@/components/map/TrafficLightPanel.vue'
 import TurnPieChart from '@/components/map/TurnPieChart.vue'
 import EventAlertPanel from '@/components/map/EventAlertPanel.vue'
-import type { GpsPoint } from '@/types'
+
 
 const mapStore = useMapStore()
 const detectionStore = useDetectionStore()
 const flowCountStore = useFlowCountStore()
-const amapRef = ref()
+const aerialRef = ref()
 const analyzing = ref(false)
 const dashCollapsed = ref(false)
-
-// FOV 覆盖区域四个角点
-const fovCorners = computed<GpsPoint[]>(() => {
-  const b = mapStore.gpsBounds
-  return [
-    { lng: b.west, lat: b.north },
-    { lng: b.east, lat: b.north },
-    { lng: b.east, lat: b.south },
-    { lng: b.west, lat: b.south },
-  ]
-})
-
-// 模拟巡航轨迹
-const demoTrajectory = computed<GpsPoint[]>(() => {
-  const p = mapStore.droneParams
-  return [
-    { lng: p.lng - 0.003, lat: p.lat + 0.001 },
-    { lng: p.lng - 0.001, lat: p.lat + 0.0005 },
-    { lng: p.lng, lat: p.lat },
-    { lng: p.lng + 0.001, lat: p.lat - 0.0005 },
-    { lng: p.lng + 0.002, lat: p.lat - 0.001 },
-  ]
-})
 
 async function analyzeTraffic() {
   if (mapStore.mappedVehicles.length === 0) {

@@ -25,7 +25,7 @@ const router = createRouter({
       path: '/map',
       name: 'map',
       component: () => import('@/views/MapView.vue'),
-      meta: { title: '地图监控' },
+      meta: { title: '交通态势' },
     },
   ],
 })
