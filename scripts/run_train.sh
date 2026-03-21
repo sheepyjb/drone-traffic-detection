@@ -35,6 +35,7 @@ if [ "$ABLATION" = "test" ]; then
     case $EXP_NUM in
         1) EXP_NAME="ablation1_yolo26s_baseline" ;;
         2) EXP_NAME="ablation2_yolo26s_p2" ;;
+        2hr) EXP_NAME="ablation2_yolo26s_p2_hr" ;;
         3) EXP_NAME="ablation3_yolo26s_fusion" ;;
         *) echo "未知实验号: $EXP_NUM"; exit 1 ;;
     esac
@@ -55,11 +56,14 @@ if [ "$ABLATION" = "1" ]; then
 elif [ "$ABLATION" = "2" ]; then
     SCRIPT="/root/autodl-tmp/train_ablation2_p2.py"
     echo ">>> 消融实验二: YOLO26-S + P2 检测头"
+elif [ "$ABLATION" = "2hr" ]; then
+    SCRIPT="/root/autodl-tmp/train_ablation2_p2_hr.py"
+    echo ">>> 消融实验二(高分辨率): YOLO26-S + P2, imgsz=864"
 elif [ "$ABLATION" = "3" ]; then
     SCRIPT="/root/autodl-tmp/train_ablation3_fusion.py"
     echo ">>> 消融实验三: YOLO26-S + P2 + RGB-IR 融合 (6ch)"
 else
-    echo "用法: bash run_train.sh [1|2|3|test] [--resume]"
+    echo "用法: bash run_train.sh [1|2|2hr|3|test] [--resume]"
     exit 1
 fi
 
