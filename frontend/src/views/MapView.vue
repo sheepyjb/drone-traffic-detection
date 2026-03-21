@@ -2,8 +2,13 @@
   <div class="command-center">
     <!-- ===== 全屏航拍检测 (视频帧 = 背景) ===== -->
     <div class="aerial-layer">
-      <div class="canvas-wrap" ref="wrapperRef">
-        <canvas ref="canvasRef"></canvas>
+      <div class="canvas-wrap" ref="wrapperRef"
+        @mousedown="onCanvasMouseDown"
+        @mousemove="onCanvasMouseMove"
+        @mouseup="onCanvasMouseUp"
+        @mouseleave="onCanvasMouseUp"
+      >
+        <canvas ref="canvasRef" :style="{ cursor: draggingLine ? 'grabbing' : nearLine ? 'grab' : 'default' }"></canvas>
         <!-- 空状态 -->
         <div v-if="!hasFrame" class="empty-state">
           <div class="empty-icon">
@@ -140,6 +145,61 @@ const showLines = ref(true)
 
 const hasFrame = computed(() => !!detectionStore.currentFrameBlob || !!detectionStore.currentFrame)
 
+// ===== 虚拟线拖拽 =====
+const draggingLine = ref<string | null>(null)
+const nearLine = ref<string | null>(null)
+const DRAG_THRESHOLD = 8 // px
+
+function getLineAtPos(clientX: number, clientY: number): string | null {
+  const wrapper = wrapperRef.value
+  if (!wrapper) return null
+  const rect = wrapper.getBoundingClientRect()
+  const nx = (clientX - rect.left) / rect.width   // 归一化 0-1
+  const ny = (clientY - rect.top) / rect.height
+
+  for (const line of flowCountStore.virtualLines) {
+    const isH = line.orientation === 'horizontal'
+    const dist = isH
+      ? Math.abs(ny - line.position) * rect.height
+      : Math.abs(nx - line.position) * rect.width
+    if (dist < DRAG_THRESHOLD) return line.id
+  }
+  return null
+}
+
+function onCanvasMouseDown(e: MouseEvent) {
+  if (!showLines.value) return
+  const lineId = getLineAtPos(e.clientX, e.clientY)
+  if (lineId) {
+    draggingLine.value = lineId
+    e.preventDefault()
+  }
+}
+
+function onCanvasMouseMove(e: MouseEvent) {
+  if (!showLines.value) return
+  if (draggingLine.value) {
+    const wrapper = wrapperRef.value
+    if (!wrapper) return
+    const rect = wrapper.getBoundingClientRect()
+    const line = flowCountStore.virtualLines.find(l => l.id === draggingLine.value)
+    if (!line) return
+    const isH = line.orientation === 'horizontal'
+    const pos = isH
+      ? Math.max(0.05, Math.min(0.95, (e.clientY - rect.top) / rect.height))
+      : Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / rect.width))
+    line.position = pos
+    // 实时重绘
+    scheduleRender()
+  } else {
+    nearLine.value = getLineAtPos(e.clientX, e.clientY)
+  }
+}
+
+function onCanvasMouseUp() {
+  draggingLine.value = null
+}
+
 // ===== 轨迹历史 =====
 const trajectoryHistory = ref<Map<number, Array<{x: number, y: number}>>>(new Map())
 const MAX_TRAIL_LENGTH = 30
@@ -228,10 +288,14 @@ function drawOverlays() {
 function drawVirtualLines(ctx: CanvasRenderingContext2D, w: number, h: number) {
   for (const line of flowCountStore.virtualLines) {
     const isH = line.orientation === 'horizontal'
+    const isDragging = draggingLine.value === line.id
+    const isNear = nearLine.value === line.id
+
     ctx.save()
     ctx.strokeStyle = line.color
-    ctx.lineWidth = 2
-    ctx.setLineDash([10, 5])
+    ctx.lineWidth = isDragging ? 3 : isNear ? 2.5 : 2
+    ctx.setLineDash(isDragging ? [] : [10, 5])
+    ctx.globalAlpha = isDragging ? 1 : isNear ? 0.9 : 0.7
     ctx.beginPath()
     if (isH) {
       ctx.moveTo(0, line.position * h)
@@ -242,19 +306,39 @@ function drawVirtualLines(ctx: CanvasRenderingContext2D, w: number, h: number) {
     }
     ctx.stroke()
     ctx.setLineDash([])
+    ctx.globalAlpha = 1
 
+    // 标签
     const total = getLineTotal(line.id)
     const label = `${line.name} ${total}`
     ctx.font = '600 12px Inter, sans-serif'
     const tw = ctx.measureText(label).width
     const lx = isH ? 6 : line.position * w + 4
     const ly = isH ? line.position * h - 6 : 16
-    ctx.fillStyle = 'rgba(0,0,0,0.7)'
+    ctx.fillStyle = isDragging ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.7)'
     ctx.beginPath()
     ctx.roundRect(lx - 2, ly - 12, tw + 8, 16, 3)
     ctx.fill()
     ctx.fillStyle = line.color
     ctx.fillText(label, lx + 2, ly)
+
+    // 拖拽提示: 小箭头
+    if (isNear || isDragging) {
+      const pos = isH ? line.position * h : line.position * w
+      ctx.fillStyle = line.color
+      ctx.globalAlpha = 0.6
+      if (isH) {
+        // 上下箭头
+        const cx = w / 2
+        ctx.beginPath(); ctx.moveTo(cx - 6, pos - 4); ctx.lineTo(cx, pos - 10); ctx.lineTo(cx + 6, pos - 4); ctx.fill()
+        ctx.beginPath(); ctx.moveTo(cx - 6, pos + 4); ctx.lineTo(cx, pos + 10); ctx.lineTo(cx + 6, pos + 4); ctx.fill()
+      } else {
+        const cy = h / 2
+        ctx.beginPath(); ctx.moveTo(pos - 4, cy - 6); ctx.lineTo(pos - 10, cy); ctx.lineTo(pos - 4, cy + 6); ctx.fill()
+        ctx.beginPath(); ctx.moveTo(pos + 4, cy - 6); ctx.lineTo(pos + 10, cy); ctx.lineTo(pos + 4, cy + 6); ctx.fill()
+      }
+      ctx.globalAlpha = 1
+    }
     ctx.restore()
   }
 }
