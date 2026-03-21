@@ -42,23 +42,25 @@
               {{ line.name }}: {{ getLineTotal(line.id) }}
             </span>
           </div>
-          <!-- 右下: 图层开关 -->
-          <div class="hud-br">
-            <label class="layer-toggle" :class="{ active: showTrajectory }">
-              <input type="checkbox" v-model="showTrajectory" /> 轨迹
-            </label>
-            <label class="layer-toggle" :class="{ active: showHeatmap }">
-              <input type="checkbox" v-model="showHeatmap" /> 热力
-            </label>
-            <label class="layer-toggle" :class="{ active: showLines }">
-              <input type="checkbox" v-model="showLines" @change="flowCountStore.linesEnabled = showLines" /> 线圈
-            </label>
-          </div>
+          <!-- 右下: 图层开关 (移除, 改到控制条) -->
         </div>
       </div>
 
       <!-- 底部控制条 -->
       <div class="control-bar">
+        <!-- 图层开关 -->
+        <div class="layer-toggles">
+          <label class="layer-toggle" :class="{ active: showTrajectory }">
+            <input type="checkbox" v-model="showTrajectory" /> 轨迹
+          </label>
+          <label class="layer-toggle" :class="{ active: showHeatmap }">
+            <input type="checkbox" v-model="showHeatmap" /> 热力
+          </label>
+          <label class="layer-toggle" :class="{ active: showLines }">
+            <input type="checkbox" v-model="showLines" @change="flowCountStore.linesEnabled = showLines" /> 线圈
+          </label>
+        </div>
+        <div class="control-divider"></div>
         <div v-if="!detectionStore.isDetecting && hasFrame" class="upload-area-sm" @click="fileInput2?.click()">
           <el-icon><UploadFilled /></el-icon>
           <span>{{ fileName || '更换文件' }}</span>
@@ -141,7 +143,7 @@ const dashCollapsed = ref(false)
 
 const showTrajectory = ref(true)
 const showHeatmap = ref(false)
-const showLines = ref(true)
+const showLines = ref(false)  // 默认关闭虚拟线
 
 const hasFrame = computed(() => !!detectionStore.currentFrameBlob || !!detectionStore.currentFrame)
 
@@ -537,7 +539,7 @@ onUnmounted(() => {
 
 // ===== HUD =====
 .hud-overlay { position: absolute; inset: 0; pointer-events: none; }
-.hud-tl, .hud-tr, .hud-bl, .hud-br {
+.hud-tl, .hud-tr, .hud-bl {
   position: absolute;
   display: flex; gap: 6px;
   font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
@@ -575,6 +577,17 @@ onUnmounted(() => {
   padding: 8px 12px; background: rgba(255,255,255,0.97);
   border-top: 1px solid rgba(0,0,0,0.06);
 }
+.layer-toggles { display: flex; gap: 4px; }
+.layer-toggle {
+  cursor: pointer; padding: 3px 10px; border-radius: 4px;
+  color: #94a3b8; font-size: 11px; user-select: none;
+  background: rgba(0,0,0,0.04); border: 1px solid transparent;
+  transition: all 0.15s;
+  input { display: none; }
+  &.active { background: rgba(8,145,178,0.1); color: #0891b2; border-color: rgba(8,145,178,0.3); }
+  &:hover { color: #0891b2; }
+}
+.control-divider { width: 1px; height: 20px; background: rgba(0,0,0,0.1); }
 .upload-area-sm {
   display: flex; align-items: center; gap: 6px;
   padding: 4px 10px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.15);
