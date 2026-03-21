@@ -1,0 +1,46 @@
+{
+  "weights": "/root/autodl-tmp/runs/detect/ablation1_yolo26s_baseline/weights/best.pt",
+  "data": "/root/autodl-tmp/dataset/data.yaml",
+  "split": "test",
+  "imgsz": 640,
+  "batch": 8,
+  "device": "0",
+  "output_dir": "/root/autodl-tmp/runs/detect/ablation1_yolo26s_baseline_test_20260320",
+  "precision": 0.7727695938363031,
+  "recall": 0.742738327577249,
+  "map50": 0.7821836703646919,
+  "map50_95": 0.5500884153515276,
+  "speed_ms": {
+    "preprocess": 0.6970589336853211,
+    "inference": 1.1488504156313337,
+    "loss": 0.001045049920777093,
+    "postprocess": 0.09509075440693317
+  },
+  "per_class_map50_95": [
+    {
+      "class_id": 0,
+      "class_name": "car",
+      "map50_95": 0.6774510215859816
+    },
+    {
+      "class_id": 1,
+      "class_name": "truck",
+      "map50_95": 0.5467141392871187
+    },
+    {
+      "class_id": 2,
+      "class_name": "bus",
+      "map50_95": 0.6996339963582089
+    },
+    {
+      "class_id": 3,
+      "class_name": "van",
+      "map50_95": 0.4129726389815067
+    },
+    {
+      "class_id": 4,
+      "class_name": "freight_car",
+      "map50_95": 0.41367028054482236
+    }
+  ]
+}

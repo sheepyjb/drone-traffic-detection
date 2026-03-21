@@ -1,0 +1,37 @@
+{
+  "weights": "/root/autodl-tmp/runs/detect/ablation2_yolo26s_p2/weights/best.pt",
+  "split": "test",
+  "imgsz": 640,
+  "mAP50": 0.7776040068242919,
+  "mAP50-95": 0.5422099251047766,
+  "precision": 0.7751923543620614,
+  "recall": 0.7333760662051129,
+  "speed_ms": {
+    "preprocess": 0.5901929119890604,
+    "inference": 1.711959381638347,
+    "loss": 0.000264187658409082,
+    "postprocess": 0.0746041064591874
+  },
+  "per_class": [
+    {
+      "class": "car",
+      "mAP50-95": 0.6770832025449198
+    },
+    {
+      "class": "truck",
+      "mAP50-95": 0.5391213344784738
+    },
+    {
+      "class": "bus",
+      "mAP50-95": 0.6828073125026214
+    },
+    {
+      "class": "van",
+      "mAP50-95": 0.40779689788938167
+    },
+    {
+      "class": "freight_car",
+      "mAP50-95": 0.40424087810848625
+    }
+  ]
+}
