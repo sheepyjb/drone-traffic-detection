@@ -8,7 +8,7 @@
         @mouseup="onCanvasMouseUp"
         @mouseleave="onCanvasMouseUp"
       >
-        <canvas ref="canvasRef" :style="{ cursor: draggingLine ? 'grabbing' : nearLine ? 'grab' : 'default' }"></canvas>
+        <canvas ref="canvasRef" :style="{ cursor: draggingEndpoint ? 'grabbing' : nearLine ? 'grab' : 'default' }"></canvas>
         <!-- 空状态 -->
         <div v-if="!hasFrame" class="empty-state">
           <div class="empty-icon">
@@ -145,59 +145,94 @@ const showLines = ref(true)
 
 const hasFrame = computed(() => !!detectionStore.currentFrameBlob || !!detectionStore.currentFrame)
 
-// ===== 虚拟线拖拽 =====
-const draggingLine = ref<string | null>(null)
+// ===== 虚拟线拖拽 (支持两端点) =====
+const draggingEndpoint = ref<{ lineId: string, point: 'start' | 'end' | 'whole' } | null>(null)
 const nearLine = ref<string | null>(null)
-const DRAG_THRESHOLD = 8 // px
+const DRAG_THRESHOLD = 10 // px
+const ENDPOINT_THRESHOLD = 14 // px
 
-function getLineAtPos(clientX: number, clientY: number): string | null {
+function distToSegment(px: number, py: number, line: { start: {x:number,y:number}, end: {x:number,y:number} }, w: number, h: number): number {
+  const ax = line.start.x * w, ay = line.start.y * h
+  const bx = line.end.x * w, by = line.end.y * h
+  const dx = bx - ax, dy = by - ay
+  const len2 = dx * dx + dy * dy
+  if (len2 === 0) return Math.hypot(px - ax, py - ay)
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2))
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+}
+
+function getLineAtPos(clientX: number, clientY: number): { lineId: string, point: 'start' | 'end' | 'whole' } | null {
   const wrapper = wrapperRef.value
   if (!wrapper) return null
   const rect = wrapper.getBoundingClientRect()
-  const nx = (clientX - rect.left) / rect.width   // 归一化 0-1
-  const ny = (clientY - rect.top) / rect.height
+  const mx = clientX - rect.left
+  const my = clientY - rect.top
 
   for (const line of flowCountStore.virtualLines) {
-    const isH = line.orientation === 'horizontal'
-    const dist = isH
-      ? Math.abs(ny - line.position) * rect.height
-      : Math.abs(nx - line.position) * rect.width
-    if (dist < DRAG_THRESHOLD) return line.id
+    // 检查是否靠近端点
+    const dStart = Math.hypot(mx - line.start.x * rect.width, my - line.start.y * rect.height)
+    if (dStart < ENDPOINT_THRESHOLD) return { lineId: line.id, point: 'start' }
+    const dEnd = Math.hypot(mx - line.end.x * rect.width, my - line.end.y * rect.height)
+    if (dEnd < ENDPOINT_THRESHOLD) return { lineId: line.id, point: 'end' }
+    // 检查是否靠近线段
+    const dLine = distToSegment(mx, my, line, rect.width, rect.height)
+    if (dLine < DRAG_THRESHOLD) return { lineId: line.id, point: 'whole' }
   }
   return null
 }
 
+let dragOffset = { dx: 0, dy: 0 }
+
 function onCanvasMouseDown(e: MouseEvent) {
   if (!showLines.value) return
-  const lineId = getLineAtPos(e.clientX, e.clientY)
-  if (lineId) {
-    draggingLine.value = lineId
+  const hit = getLineAtPos(e.clientX, e.clientY)
+  if (hit) {
+    draggingEndpoint.value = hit
+    if (hit.point === 'whole') {
+      const wrapper = wrapperRef.value!
+      const rect = wrapper.getBoundingClientRect()
+      const nx = (e.clientX - rect.left) / rect.width
+      const ny = (e.clientY - rect.top) / rect.height
+      const line = flowCountStore.virtualLines.find(l => l.id === hit.lineId)!
+      dragOffset = { dx: nx - line.start.x, dy: ny - line.start.y }
+    }
     e.preventDefault()
   }
 }
 
 function onCanvasMouseMove(e: MouseEvent) {
   if (!showLines.value) return
-  if (draggingLine.value) {
+  if (draggingEndpoint.value) {
     const wrapper = wrapperRef.value
     if (!wrapper) return
     const rect = wrapper.getBoundingClientRect()
-    const line = flowCountStore.virtualLines.find(l => l.id === draggingLine.value)
+    const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height))
+    const line = flowCountStore.virtualLines.find(l => l.id === draggingEndpoint.value!.lineId)
     if (!line) return
-    const isH = line.orientation === 'horizontal'
-    const pos = isH
-      ? Math.max(0.05, Math.min(0.95, (e.clientY - rect.top) / rect.height))
-      : Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / rect.width))
-    line.position = pos
-    // 实时重绘
+
+    if (draggingEndpoint.value.point === 'start') {
+      line.start = { x: nx, y: ny }
+    } else if (draggingEndpoint.value.point === 'end') {
+      line.end = { x: nx, y: ny }
+    } else {
+      // 整体平移
+      const dx = line.end.x - line.start.x
+      const dy = line.end.y - line.start.y
+      const newSx = Math.max(0, Math.min(1, nx - dragOffset.dx))
+      const newSy = Math.max(0, Math.min(1, ny - dragOffset.dy))
+      line.start = { x: newSx, y: newSy }
+      line.end = { x: Math.max(0, Math.min(1, newSx + dx)), y: Math.max(0, Math.min(1, newSy + dy)) }
+    }
     scheduleRender()
   } else {
-    nearLine.value = getLineAtPos(e.clientX, e.clientY)
+    const hit = getLineAtPos(e.clientX, e.clientY)
+    nearLine.value = hit?.lineId || null
   }
 }
 
 function onCanvasMouseUp() {
-  draggingLine.value = null
+  draggingEndpoint.value = null
 }
 
 // ===== 轨迹历史 =====
@@ -287,9 +322,10 @@ function drawOverlays() {
 
 function drawVirtualLines(ctx: CanvasRenderingContext2D, w: number, h: number) {
   for (const line of flowCountStore.virtualLines) {
-    const isH = line.orientation === 'horizontal'
-    const isDragging = draggingLine.value === line.id
+    const isDragging = draggingEndpoint.value?.lineId === line.id
     const isNear = nearLine.value === line.id
+    const sx = line.start.x * w, sy = line.start.y * h
+    const ex = line.end.x * w, ey = line.end.y * h
 
     ctx.save()
     ctx.strokeStyle = line.color
@@ -297,48 +333,41 @@ function drawVirtualLines(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.setLineDash(isDragging ? [] : [10, 5])
     ctx.globalAlpha = isDragging ? 1 : isNear ? 0.9 : 0.7
     ctx.beginPath()
-    if (isH) {
-      ctx.moveTo(0, line.position * h)
-      ctx.lineTo(w, line.position * h)
-    } else {
-      ctx.moveTo(line.position * w, 0)
-      ctx.lineTo(line.position * w, h)
-    }
+    ctx.moveTo(sx, sy)
+    ctx.lineTo(ex, ey)
     ctx.stroke()
     ctx.setLineDash([])
     ctx.globalAlpha = 1
+
+    // 端点圆圈 (拖拽提示)
+    if (isNear || isDragging) {
+      for (const [px, py] of [[sx, sy], [ex, ey]]) {
+        ctx.beginPath()
+        ctx.arc(px, py, 6, 0, Math.PI * 2)
+        ctx.fillStyle = line.color
+        ctx.globalAlpha = 0.8
+        ctx.fill()
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 2
+        ctx.stroke()
+        ctx.globalAlpha = 1
+      }
+    }
 
     // 标签
     const total = getLineTotal(line.id)
     const label = `${line.name} ${total}`
     ctx.font = '600 12px Inter, sans-serif'
     const tw = ctx.measureText(label).width
-    const lx = isH ? 6 : line.position * w + 4
-    const ly = isH ? line.position * h - 6 : 16
+    const midX = (sx + ex) / 2 - tw / 2 - 2
+    const midY = (sy + ey) / 2 - 8
     ctx.fillStyle = isDragging ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.7)'
     ctx.beginPath()
-    ctx.roundRect(lx - 2, ly - 12, tw + 8, 16, 3)
+    ctx.roundRect(midX, midY, tw + 8, 16, 3)
     ctx.fill()
     ctx.fillStyle = line.color
-    ctx.fillText(label, lx + 2, ly)
+    ctx.fillText(label, midX + 4, midY + 12)
 
-    // 拖拽提示: 小箭头
-    if (isNear || isDragging) {
-      const pos = isH ? line.position * h : line.position * w
-      ctx.fillStyle = line.color
-      ctx.globalAlpha = 0.6
-      if (isH) {
-        // 上下箭头
-        const cx = w / 2
-        ctx.beginPath(); ctx.moveTo(cx - 6, pos - 4); ctx.lineTo(cx, pos - 10); ctx.lineTo(cx + 6, pos - 4); ctx.fill()
-        ctx.beginPath(); ctx.moveTo(cx - 6, pos + 4); ctx.lineTo(cx, pos + 10); ctx.lineTo(cx + 6, pos + 4); ctx.fill()
-      } else {
-        const cy = h / 2
-        ctx.beginPath(); ctx.moveTo(pos - 4, cy - 6); ctx.lineTo(pos - 10, cy); ctx.lineTo(pos - 4, cy + 6); ctx.fill()
-        ctx.beginPath(); ctx.moveTo(pos + 4, cy - 6); ctx.lineTo(pos + 10, cy); ctx.lineTo(pos + 4, cy + 6); ctx.fill()
-      }
-      ctx.globalAlpha = 1
-    }
     ctx.restore()
   }
 }

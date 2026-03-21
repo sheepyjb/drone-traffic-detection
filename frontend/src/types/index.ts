@@ -169,10 +169,13 @@ export interface VehicleThreshold {
 // ===== 虚拟线圈流量统计 =====
 export interface VirtualLine {
   id: string
-  position: number         // 归一化坐标 (0-1)
-  orientation: 'horizontal' | 'vertical'  // horizontal→Y轴检测线, vertical→X轴检测线
+  start: { x: number; y: number }   // 归一化坐标 (0-1)
+  end: { x: number; y: number }     // 归一化坐标 (0-1)
   name: string
   color: string
+  // 兼容旧代码的计算属性
+  position?: number
+  orientation?: 'horizontal' | 'vertical'
 }
 
 export interface LineCrossing {

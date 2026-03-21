@@ -44,12 +44,35 @@ const LOS_COLORS: Record<LOSGrade, string> = {
 const FLUSH_INTERVAL = 100 // ms — UI 响应式数据刷新间隔（10Hz）
 
 export const useFlowCountStore = defineStore('flowCount', () => {
-  // ===== 4条虚拟检测线（十字路口） =====
+
+  // ===== 通用几何工具 (任意角度线段) =====
+  /** 叉积: 判断点 (px,py) 在线段 line 的哪一侧, >0 左侧, <0 右侧 */
+  function crossProduct(line: VirtualLine, px: number, py: number): number {
+    const dx = line.end.x - line.start.x
+    const dy = line.end.y - line.start.y
+    return dx * (py - line.start.y) - dy * (px - line.start.x)
+  }
+
+  /** 检查 bbox 是否与线段相交 (简化: bbox 4 个角是否跨越线段两侧) */
+  function bboxIntersectsLine(bbox: [number, number, number, number], line: VirtualLine): boolean {
+    const [x1, y1, x2, y2] = bbox
+    const corners = [
+      crossProduct(line, x1, y1),
+      crossProduct(line, x2, y1),
+      crossProduct(line, x1, y2),
+      crossProduct(line, x2, y2),
+    ]
+    const hasPos = corners.some(c => c > 0)
+    const hasNeg = corners.some(c => c < 0)
+    return hasPos && hasNeg
+  }
+
+  // ===== 4条虚拟检测线（十字路口，两点定义，支持任意角度） =====
   const virtualLines = ref<VirtualLine[]>([
-    { id: 'line-north', position: 0.30, orientation: 'horizontal', name: '北侧线', color: '#3B82F6' },
-    { id: 'line-south', position: 0.70, orientation: 'horizontal', name: '南侧线', color: '#EF4444' },
-    { id: 'line-west',  position: 0.30, orientation: 'vertical',   name: '西侧线', color: '#F59E0B' },
-    { id: 'line-east',  position: 0.70, orientation: 'vertical',   name: '东侧线', color: '#10B981' },
+    { id: 'line-north', start: { x: 0, y: 0.30 }, end: { x: 1, y: 0.30 }, name: '北侧线', color: '#3B82F6' },
+    { id: 'line-south', start: { x: 0, y: 0.70 }, end: { x: 1, y: 0.70 }, name: '南侧线', color: '#EF4444' },
+    { id: 'line-west',  start: { x: 0.30, y: 0 }, end: { x: 0.30, y: 1 }, name: '西侧线', color: '#F59E0B' },
+    { id: 'line-east',  start: { x: 0.70, y: 0 }, end: { x: 0.70, y: 1 }, name: '东侧线', color: '#10B981' },
   ])
 
   // ===== 基础轨迹历史（纯 JS，非响应式） =====
@@ -409,27 +432,21 @@ export const useFlowCountStore = defineStore('flowCount', () => {
       if (cx < 0.3) _dirVehicles.west++
       else if (cx > 0.7) _dirVehicles.east++
 
-      // 占有率检测
+      // 占有率检测 (通用: 检查 bbox 是否与线段相交)
       for (const line of virtualLines.value) {
-        const isH = line.orientation === 'horizontal'
-        if (isH) {
-          if (track.bbox[1] <= line.position && track.bbox[3] >= line.position)
-            lineOccupiedThisFrame[line.id] = true
-        } else {
-          if (track.bbox[0] <= line.position && track.bbox[2] >= line.position)
-            lineOccupiedThisFrame[line.id] = true
+        if (bboxIntersectsLine(track.bbox, line)) {
+          lineOccupiedThisFrame[line.id] = true
         }
       }
 
-      // 穿越检测（事件驱动：仅穿越时触发响应式更新，频率很低）
+      // 穿越检测 (通用: 叉积符号变化 = 穿越线段)
       const prev = trackHistory.get(track.track_id)
       if (prev) {
         for (const line of virtualLines.value) {
-          const isH = line.orientation === 'horizontal'
-          const prevVal = isH ? prev.cy : prev.cx
-          const currVal = isH ? cy : cx
-          if ((prevVal < line.position) !== (currVal < line.position)) {
-            const direction: 'positive' | 'negative' = currVal > prevVal ? 'positive' : 'negative'
+          const prevSide = crossProduct(line, prev.cx, prev.cy)
+          const currSide = crossProduct(line, cx, cy)
+          if ((prevSide < 0) !== (currSide < 0) && prevSide !== 0 && currSide !== 0) {
+            const direction: 'positive' | 'negative' = currSide > 0 ? 'positive' : 'negative'
             _totalCrossedCount++
             totalCrossedRef.value = _totalCrossedCount
             crossings.value.push({

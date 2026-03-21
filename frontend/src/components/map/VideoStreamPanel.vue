@@ -320,21 +320,15 @@ function drawVirtualLines() {
 
   const w = canvas.width, h = canvas.height
   for (const line of flowCountStore.virtualLines) {
-    const isH = line.orientation === 'horizontal'
+    const sx = line.start.x * w, sy = line.start.y * h
+    const ex = line.end.x * w, ey = line.end.y * h
     ctx.save()
     ctx.strokeStyle = line.color
     ctx.lineWidth = 2
     ctx.setLineDash([10, 5])
     ctx.beginPath()
-    if (isH) {
-      const ly = line.position * h
-      ctx.moveTo(0, ly)
-      ctx.lineTo(w, ly)
-    } else {
-      const lx = line.position * w
-      ctx.moveTo(lx, 0)
-      ctx.lineTo(lx, h)
-    }
+    ctx.moveTo(sx, sy)
+    ctx.lineTo(ex, ey)
     ctx.stroke()
     ctx.setLineDash([])
 
@@ -342,18 +336,14 @@ function drawVirtualLines() {
     const labelText = `${line.name} ${total}`
     ctx.font = '600 12px Inter, Microsoft YaHei, sans-serif'
     const tw = ctx.measureText(labelText).width
-    let lx: number, ly: number
-    if (isH) {
-      lx = 6; ly = line.position * h - 6
-    } else {
-      lx = line.position * w + 4; ly = 16
-    }
+    const lx = (sx + ex) / 2 - tw / 2 - 2
+    const ly = (sy + ey) / 2 - 8
     ctx.fillStyle = 'rgba(0,0,0,0.7)'
     ctx.beginPath()
-    ctx.roundRect(lx - 2, ly - 12, tw + 8, 16, 3)
+    ctx.roundRect(lx, ly, tw + 8, 16, 3)
     ctx.fill()
     ctx.fillStyle = line.color
-    ctx.fillText(labelText, lx + 2, ly)
+    ctx.fillText(labelText, lx + 4, ly + 12)
     ctx.restore()
   }
 }
